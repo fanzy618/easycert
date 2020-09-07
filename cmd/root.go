@@ -17,8 +17,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
-	"net"
 	"os"
 
 	homedir "github.com/mitchellh/go-homedir"
@@ -61,16 +59,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&globalCfg.CommonName, "cn", "easycert", "Common Name")
 	rootCmd.PersistentFlags().StringSliceVar(&globalCfg.Organization, "orgs", []string{"easycert"}, "Organizations")
 	rootCmd.PersistentFlags().StringSliceVar(&globalCfg.AltNames.DNSNames, "dns", []string{}, "DNS")
-
-	rootCmd.PersistentFlags().StringSliceVar(&ipStrSlic, "ip", []string{}, "IPs")
-	for _, ipStr := range ipStrSlic {
-		ip := net.ParseIP(ipStr)
-		if ip == nil {
-			log.Println("Parse IP", ipStr, "failed, ignore it.")
-			continue
-		}
-		globalCfg.AltNames.IPs = append(globalCfg.AltNames.IPs, ip)
-	}
+	rootCmd.PersistentFlags().IPSliceVar(&globalCfg.AltNames.IPs, "ip", nil, "IPs")
 
 	rootCmd.PersistentFlags().IntVar(&globalCfg.Bits, "b", 2048, "Bits of RSA key")
 
