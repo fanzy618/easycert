@@ -20,7 +20,8 @@ The following flags are available to all commands:
 - `--orgs` – comma-separated list of organizations (default: `easycert`)
 - `--dns` – repeatable flag for DNS names
 - `--ip` – repeatable flag for IP addresses
-- `-b` – RSA key size in bits (default: `2048`)
+- `-b` – RSA key size in bits (default: `4096`)
+- `--duration` – validity duration for certificates (default: `1y`, accepts values like `30d`, `12h`)
 
 ## Commands
 
@@ -57,7 +58,7 @@ Subject: CN=mysite.com,O=easycert
 DNSNames: mysite1.com, mysite2.com
 IPAddresses:
 NotBefore: 2025-08-07T06:46:02Z
-NotAfter: 2035-08-05T06:46:04Z
+NotAfter: 2026-08-07T06:46:04Z
 ```
 
 ## License

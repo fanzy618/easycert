@@ -6,6 +6,7 @@ import (
 	"net"
 	"strings"
 	"testing"
+	"time"
 
 	certutil "k8s.io/client-go/util/cert"
 
@@ -22,16 +23,17 @@ func TestShowCmd(t *testing.T) {
 				IPs:      []net.IP{net.ParseIP("127.0.0.1")},
 			},
 		},
-		Name: "test",
-		Dir:  tmpDir,
-		Bits: 2048,
+		Name:     "test",
+		Dir:      tmpDir,
+		Bits:     4096,
+		ValidFor: time.Hour * 24 * 365,
 	}
 
 	key, err := cert.NewKey("", cfg.Bits)
 	if err != nil {
 		t.Fatalf("NewKey: %v", err)
 	}
-	caCert, err := certutil.NewSelfSignedCACert(cfg.Config, key)
+	caCert, err := cert.NewSelfSignedCACert(cfg, key)
 	if err != nil {
 		t.Fatalf("NewSelfSignedCACert: %v", err)
 	}

@@ -17,13 +17,16 @@ package cert
 import (
 	"bytes"
 	"crypto"
-	"crypto/rand"
+	cryptorand "crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
 	"log"
+	"math/big"
 	"path"
+	"time"
 
 	certutil "k8s.io/client-go/util/cert"
 	"k8s.io/client-go/util/keyutil"
@@ -40,12 +43,13 @@ type Config struct {
 	Name string
 	Dir  string
 
-	Bits int
+	Bits     int
+	ValidFor time.Duration
 }
 
 // NewKey return a new private key
 func NewKey(algorithm string, bits int) (crypto.Signer, error) {
-	key, err := rsa.GenerateKey(rand.Reader, bits)
+	key, err := rsa.GenerateKey(cryptorand.Reader, bits)
 	if err != nil {
 		log.Println("NewKey failed:", err.Error())
 		return nil, err
@@ -73,6 +77,34 @@ func LoadFromDisk(pkiPath, name string) (*x509.Certificate, crypto.Signer, error
 		return nil, nil, fmt.Errorf("Unknown key format")
 	}
 	return certs[0], rsaKey, nil
+}
+
+// NewSelfSignedCACert creates a self-signed CA certificate respecting the
+// validity duration configured in cfg. If cfg.ValidFor is zero, a default of
+// one year is used.
+func NewSelfSignedCACert(cfg *Config, key crypto.Signer) (*x509.Certificate, error) {
+	now := time.Now()
+	validFor := cfg.ValidFor
+	if validFor == 0 {
+		validFor = time.Hour * 24 * 365
+	}
+	tmpl := x509.Certificate{
+		SerialNumber: new(big.Int).SetInt64(0),
+		Subject: pkix.Name{
+			CommonName:   cfg.CommonName,
+			Organization: cfg.Organization,
+		},
+		NotBefore:             now.UTC(),
+		NotAfter:              now.Add(validFor).UTC(),
+		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
+		BasicConstraintsValid: true,
+		IsCA:                  true,
+	}
+	certDERBytes, err := x509.CreateCertificate(cryptorand.Reader, &tmpl, &tmpl, key.Public(), key)
+	if err != nil {
+		return nil, err
+	}
+	return x509.ParseCertificate(certDERBytes)
 }
 
 func WriteToDisk(pkiPath, name string, certs []*x509.Certificate, key crypto.Signer) error {
