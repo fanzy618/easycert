@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,35 +17,37 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
+
+	"github.com/fanzy618/easycert/pkg/cert"
 )
 
 // showCmd represents the show command
 var showCmd = &cobra.Command{
 	Use:   "show",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short: "Show certificate information",
+	Long:  "Load a certificate from disk and print its details. The certificate location is determined by --name and --dir flags.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, _, err := cert.LoadFromDisk(globalCfg.Dir, globalCfg.Name)
+		if err != nil {
+			return err
+		}
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("show called")
+		fmt.Fprintf(cmd.OutOrStdout(), "Subject: %s\n", c.Subject.String())
+		fmt.Fprintf(cmd.OutOrStdout(), "DNSNames: %s\n", strings.Join(c.DNSNames, ", "))
+		var ips []string
+		for _, ip := range c.IPAddresses {
+			ips = append(ips, ip.String())
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "IPAddresses: %s\n", strings.Join(ips, ", "))
+		fmt.Fprintf(cmd.OutOrStdout(), "NotBefore: %s\n", c.NotBefore.Format("2006-01-02T15:04:05Z07:00"))
+		fmt.Fprintf(cmd.OutOrStdout(), "NotAfter: %s\n", c.NotAfter.Format("2006-01-02T15:04:05Z07:00"))
+		return nil
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(showCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// showCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// showCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

@@ -47,7 +47,7 @@ type Config struct {
 func NewKey(algorithm string, bits int) (crypto.Signer, error) {
 	key, err := rsa.GenerateKey(rand.Reader, bits)
 	if err != nil {
-		log.Println("NewKey failed:", err.Error)
+		log.Println("NewKey failed:", err.Error())
 		return nil, err
 	}
 	return key, nil
